@@ -162,6 +162,7 @@
     }
 
     .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .card-head-actions { display: flex; align-items: center; gap: 6px; }
     .audio-play-btn {
       width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
       background: var(--bg); color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -169,6 +170,31 @@
     }
     .audio-play-btn:hover { background: var(--primary); color: var(--bg); }
     .audio-play-btn svg { width: 16px; height: 16px; fill: currentColor; }
+    .bookmark-btn {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.25s ease; flex-shrink: 0; position: relative;
+    }
+    .bookmark-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .bookmark-btn.bookmarked { background: rgba(251, 191, 36, 0.12); border-color: var(--gold); color: var(--gold); }
+    .bookmark-btn svg { width: 16px; height: 16px; transition: transform 0.25s ease; }
+    .bookmark-btn.bookmarked svg { transform: scale(1.15); }
+    .bookmark-filter-btn {
+      padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text-muted); font-size: 0.85rem; cursor: pointer;
+      font-weight: 700; transition: all 0.2s ease; display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .bookmark-filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .bookmark-filter-btn.active {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05));
+      border-color: var(--gold); color: var(--gold);
+    }
+    .bookmark-filter-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .bookmark-count-badge {
+      background: var(--gold); color: var(--bg); font-size: 0.72rem; font-weight: 800;
+      padding: 1px 6px; border-radius: 10px; min-width: 18px; text-align: center; line-height: 1.4;
+    }
     
     .meta-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
     .tag { font-size: 0.72rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); }
@@ -326,6 +352,20 @@
           <option value="uk-male">بريطاني (صوت رجالي)</option>
           <option value="uk-female">بريطاني (صوت نسائي)</option>
         </select>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <button id="bookmarkFilterBtn" class="bookmark-filter-btn" onclick="toggleBookmarkFilter()">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            <span id="bookmarkFilterLabel">المحفوظات</span>
+            <span id="bookmarkCountBadge" class="bookmark-count-badge">0</span>
+          </button>
+          <button id="exportBookmarkBtn" class="bookmark-filter-btn" style="padding: 10px;" onclick="exportBookmarks()" title="Export Bookmarks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </button>
+          <button id="importBookmarkBtn" class="bookmark-filter-btn" style="padding: 10px;" onclick="document.getElementById('importBookmarkInput').click()" title="Import Bookmarks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </button>
+          <input type="file" id="importBookmarkInput" accept=".json" style="display:none;" onchange="importBookmarks(event)">
+        </div>
         <div class="theme-controls">
           <div class="theme-buttons">
             <button class="theme-btn" id="btnSelectAllDict" onclick="toggleParentOnly('dict', true)">تحديد جميع الأقسام</button>
@@ -18192,6 +18232,9 @@
         meaningLabel: "المعنى",
         showExamples: "عرض الأمثلة",
         hideExamples: "إخفاء الأمثلة",
+        bookmarkFilter: "المحفوظات",
+        bookmarkAdd: "حفظ الكلمة",
+        bookmarkRemove: "إزالة الحفظ",
         footer: "لا تنسونا من صالح دعائكم ونسأل الله التوفيق لنا ولكم, تحيات ماجد الغامدي"
       },
       en: {
@@ -18261,6 +18304,9 @@
         meaningLabel: "Meaning",
         showExamples: "Show Details & Examples",
         hideExamples: "Hide Details & Examples",
+        bookmarkFilter: "Bookmarks",
+        bookmarkAdd: "Bookmark",
+        bookmarkRemove: "Remove Bookmark",
         footer: " Majed Al-Ghamdi says hello "
       }
     };
@@ -18344,6 +18390,7 @@
       document.getElementById('thActions').textContent = t.thActions;
       document.getElementById('btnClearHistory').textContent = t.btnClearHistory;
       document.getElementById('appFooter').textContent = t.footer;
+      document.getElementById('bookmarkFilterLabel').textContent = t.bookmarkFilter;
     }
 
     function changeUITheme(themeValue) {
@@ -18393,6 +18440,97 @@
   return cleanText.split(/[•\-:]/)[0].trim() || 'Other';
 }
 
+    // ===== Bookmark System =====
+    let bookmarkFilterActive = false;
+
+    function getBookmarks() {
+      try { return JSON.parse(localStorage.getItem('vocabBookmarks') || '[]'); }
+      catch(e) { return []; }
+    }
+
+    function saveBookmarks(bookmarks) {
+      localStorage.setItem('vocabBookmarks', JSON.stringify(bookmarks));
+    }
+
+    function isBookmarked(word) {
+      return getBookmarks().includes(word);
+    }
+
+    function toggleBookmark(word) {
+      let bookmarks = getBookmarks();
+      const idx = bookmarks.indexOf(word);
+      if (idx > -1) {
+        bookmarks.splice(idx, 1);
+      } else {
+        bookmarks.push(word);
+      }
+      saveBookmarks(bookmarks);
+      updateBookmarkBadge();
+      applyFilter();
+    }
+
+    function toggleBookmarkFilter() {
+      bookmarkFilterActive = !bookmarkFilterActive;
+      const btn = document.getElementById('bookmarkFilterBtn');
+      btn.classList.toggle('active', bookmarkFilterActive);
+      applyFilter();
+    }
+
+    function updateBookmarkBadge() {
+      const count = getBookmarks().length;
+      const badge = document.getElementById('bookmarkCountBadge');
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+
+    function exportBookmarks() {
+      const bookmarks = getBookmarks();
+      if (bookmarks.length === 0) {
+        alert(currentLang === 'ar' ? 'لا توجد كلمات محفوظة للتصدير' : 'No bookmarks to export');
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bookmarks));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "vocab_bookmarks.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    }
+
+    function importBookmarks(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const contents = e.target.result;
+          const data = JSON.parse(contents);
+          if (Array.isArray(data)) {
+            let bookmarks = getBookmarks();
+            let newCount = 0;
+            data.forEach(word => {
+              if (typeof word === 'string' && !bookmarks.includes(word)) {
+                bookmarks.push(word);
+                newCount++;
+              }
+            });
+            saveBookmarks(bookmarks);
+            updateBookmarkBadge();
+            applyFilter();
+            alert(currentLang === 'ar' ? `تم استيراد ${newCount} كلمة جديدة بنجاح` : `Successfully imported ${newCount} new bookmarks`);
+          } else {
+             alert(currentLang === 'ar' ? 'ملف غير صالح' : 'Invalid file format');
+          }
+        } catch(err) {
+          alert(currentLang === 'ar' ? 'حدث خطأ أثناء قراءة الملف' : 'Error reading file');
+        }
+        event.target.value = '';
+      };
+      reader.readAsText(file);
+    }
+    // ===== End Bookmark System =====
+
     let isInitialized = false;
     function initializeApp() {
       if(isInitialized) return;
@@ -18400,6 +18538,7 @@
       buildThemeTrees('dictThemeTree', 'dict-theme-check');
       buildThemeTrees('quizThemeTree', 'quiz-theme-check');
       isInitialized = true;
+      updateBookmarkBadge();
       applyFilter();
     }
 
@@ -18504,6 +18643,12 @@
         });
       });
 
+      // Bookmark filter
+      if (bookmarkFilterActive) {
+        const bookmarks = getBookmarks();
+        filtered = filtered.filter(item => bookmarks.includes(item.w));
+      }
+
       if (sortType === 'alpha') {
         filtered.sort((a, b) => a.w.localeCompare(b.w));
       } else if (sortType === 'length') {
@@ -18536,6 +18681,7 @@
       const t = i18n[currentLang];
       document.getElementById('statusBar').textContent = t.statusCount.replace('{n}', items.length);
       
+      const bookmarks = getBookmarks();
       let html = '';
       items.forEach(item => {
         const cleanWord = item.w.replace(/'/g, "\\'");
@@ -18551,14 +18697,26 @@
           examplesHTML = `<div class="example-line">${currentLang === 'ar' ? 'لا توجد أمثلة مضافة' : 'No examples available'}</div>`;
         }
 
+        const isBm = bookmarks.includes(item.w);
+        const bmClass = isBm ? ' bookmarked' : '';
+        const bmTitle = isBm ? t.bookmarkRemove : t.bookmarkAdd;
+        const bmSvg = isBm
+          ? `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+
         if (currentLang === 'en') {
           html += `
             <div class="word-card">
               <div class="card-head">
                 <div class="word-en">${item.w}</div>
-                <button class="audio-play-btn" onclick="playAudio('${cleanWord}')" title="Play Audio">
-                  <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                </button>
+                <div class="card-head-actions">
+                  <button class="bookmark-btn${bmClass}" onclick="toggleBookmark('${cleanWord}')" title="${bmTitle}">
+                    ${bmSvg}
+                  </button>
+                  <button class="audio-play-btn" onclick="playAudio('${cleanWord}')" title="Play Audio">
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="meta-tags"><span class="tag source-tag">${item.t}</span><span class="tag">${item.p}</span></div>
               <div class="def-box">${item.d}</div>
@@ -18580,9 +18738,14 @@
             <div class="word-card">
               <div class="card-head">
                 <div class="word-en">${item.w}</div>
-                <button class="audio-play-btn" onclick="playAudio('${cleanWord}')" title="تشغيل النطق">
-                  <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                </button>
+                <div class="card-head-actions">
+                  <button class="bookmark-btn${bmClass}" onclick="toggleBookmark('${cleanWord}')" title="${bmTitle}">
+                    ${bmSvg}
+                  </button>
+                  <button class="audio-play-btn" onclick="playAudio('${cleanWord}')" title="تشغيل النطق">
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                  </button>
+                </div>
               </div>
               <div class="meta-tags"><span class="tag source-tag">${item.t}</span><span class="tag">${item.p}</span></div>
               <div class="def-box">${item.d}</div>
